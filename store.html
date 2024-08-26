@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Store</title>
+    <style>
+        body {
+            background-color: #333;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #28a745;
+            color: #fff;
+            cursor: pointer;
+        }
+        button.delete {
+            background-color: #dc3545;
+            margin-top: 10px;
+        }
+        .product {
+            background-color: #444;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Manage Products</h1>
+
+    <form id="store-form">
+        <div class="form-group">
+            <label for="product-name">Product Name</label>
+            <input type="text" id="product-name" required>
+        </div>
+        <div class="form-group">
+            <label for="product-price">Product Price</label>
+            <input type="number" id="product-price" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Enter Password</label>
+            <input type="password" id="password" required>
+        </div>
+        <button type="submit">Add/Update Product</button>
+    </form>
+
+    <h2>Existing Products</h2>
+    <div id="product-list"></div>
+
+    <script>
+        const password = 'Tahsun@1122';
+
+        // Load existing products
+        function loadProducts() {
+            fetch('store.json')
+                .then(response => response.json())
+                .then(data => {
+                    const productList = document.getElementById('product-list');
+                    productList.innerHTML = '';
+                    data.forEach((product, index) => {
+                        productList.innerHTML += `
+                            <div class="product">
+                                <h2>${product.name}</h2>
+                                <p>Price: ${product.price}</p>
+                                <button class="delete" onclick="deleteProduct(${index})">Delete</button>
+                            </div>
+                        `;
+                    });
+                })
+                .catch(error => console.error('Error fetching products:', error));
+        }
+
+        // Delete a product
+        function deleteProduct(index) {
+            const enteredPassword = prompt('Enter Password:');
+            if (enteredPassword === password) {
+                fetch('store.json')
+                    .then(response => response.json())
+                    .then(data => {
+                        data.splice(index, 1);
+                        updateStore(data);
+                    });
+            } else {
+                alert('Incorrect password!');
+            }
+        }
+
+        // Update the store.json file
+        function updateStore(data) {
+            fetch('update-store.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(() => {
+                loadProducts();
+                alert('Store updated successfully!');
+            })
+            .catch(error => console.error('Error updating store:', error));
+        }
+
+        // Handle form submission
+        document.getElementById('store-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const enteredPassword = document.getElementById('password').value;
+
+            if (enteredPassword === password) {
+                const productName = document.getElementById('product-name').value;
+                const productPrice = document.getElementById('product-price').value;
+
+                fetch('store.json')
+                    .then(response => response.json())
+                    .then(data => {
+                        const existingProduct = data.find(product => product.name === productName);
+                        if (existingProduct) {
+                            existingProduct.price = productPrice;
+                        } else {
+                            data.push({ name: productName, price: productPrice });
+                        }
+                        updateStore(data);
+                    });
+            } else {
+                alert('Incorrect password!');
+            }
+        });
+
+        // Load products on page load
+        loadProducts();
+    </script>
+</body>
+</html>
